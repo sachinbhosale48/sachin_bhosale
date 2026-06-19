@@ -1,0 +1,21 @@
+# Terraform State Files
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate.*
+.terraform.lock.hcl
+
+# Terraform Cache
+.terraform/
+
+# IDE and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.tfplan
+
+# Local override files
+terraform.tfvars.local
+override.tf
