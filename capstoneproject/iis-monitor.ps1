@@ -1,6 +1,6 @@
 param(
     [switch]$DryRun,
-    [int]$PollIntervalSeconds = 60
+    [int]$PollIntervalSeconds = 20
 )
 
 Set-StrictMode -Version Latest
@@ -67,7 +67,7 @@ function Get-IisErrorEvent {
 
 function Initialize-AppPoolBaseline {
     try {
-        $appPools = Get-ChildItem IIS:\AppPools
+        $appPools = Get-ChildItem IIS:\AppPools -ErrorAction Stop
     }
     catch {
         throw "Failed to enumerate IIS app pools: $($_.Exception.Message)"
@@ -75,7 +75,7 @@ function Initialize-AppPoolBaseline {
 
     foreach ($pool in $appPools) {
         try {
-            $state = (Get-WebAppPoolState -Name $pool.Name).Value
+            $state = (Get-WebAppPoolState -Name $pool.Name -ErrorAction Stop).Value
             $script:InitialPoolStates[$pool.Name] = $state
             Write-Log -Message "Baseline captured: pool '$($pool.Name)' state '$state'."
         }
@@ -98,7 +98,7 @@ function Restore-AppPoolState {
         $targetState = [string]$entry.Value
 
         try {
-            $currentState = (Get-WebAppPoolState -Name $poolName).Value
+            $currentState = (Get-WebAppPoolState -Name $poolName -ErrorAction Stop).Value
         }
         catch {
             Write-Log -Level 'ERROR' -Message "Rollback could not read state for pool '$poolName': $($_.Exception.Message)"
@@ -150,7 +150,7 @@ function Stop-MonitoringLoop {
 function Invoke-AppPoolMonitor {
     while ($script:ContinueMonitoring) {
         try {
-            $appPools = Get-ChildItem IIS:\AppPools
+            $appPools = Get-ChildItem IIS:\AppPools -ErrorAction Stop
         }
         catch {
             Write-Log -Level 'ERROR' -Message "Failed to enumerate IIS app pools: $($_.Exception.Message)"
@@ -161,49 +161,18 @@ function Invoke-AppPoolMonitor {
             $poolName = $pool.Name
 
             try {
-                $state = (Get-WebAppPoolState -Name $poolName).Value
+                $state = (Get-WebAppPoolState -Name $poolName -ErrorAction Stop).Value
             }
             catch {
                 Write-Log -Level 'ERROR' -Message "Failed to read state for pool '$poolName': $($_.Exception.Message)"
                 continue
             }
 
-            if ($state -ne 'Stopped') {
-                Write-Log -Message "Pool '$poolName' is '$state'."
-                continue
-            }
-
-            Write-Log -Level 'WARN' -Message "Pool '$poolName' is Stopped. Collecting last 10 minutes of IIS-related error events."
-            $events = Get-IisErrorEvent -Since (Get-Date).AddMinutes(-10)
-
-            if (-not $events -or $events.Count -eq 0) {
-                Write-Log -Message "No IIS-related error events found in the last 10 minutes for pool '$poolName'."
+            if ($state -eq 'Stopped') {
+                Write-Log -Level 'WARN' -Message "Pool '$poolName' is Stopped. Continuing to monitor status every $PollIntervalSeconds second(s)."
             }
             else {
-                foreach ($evt in $events) {
-                    $messageOneLine = ($evt.Message -replace "`r`n", ' ')
-                    Write-Log -Level 'ERROR' -Message "Event $($evt.Id) [$($evt.ProviderName)] at $($evt.TimeCreated): $messageOneLine"
-                }
-            }
-
-            try {
-                # Idempotency guard: verify current state before restart action.
-                $latestState = (Get-WebAppPoolState -Name $poolName).Value
-                if ($latestState -eq 'Started') {
-                    Write-Log -Message "Pool '$poolName' already running; restart skipped."
-                    continue
-                }
-
-                if ($DryRun) {
-                    Write-Log -Level 'WARN' -Message "[DryRun] Would restart stopped pool '$poolName'."
-                    continue
-                }
-
-                Start-WebAppPool -Name $poolName -ErrorAction Stop
-                Write-Log -Message "Restart attempted for pool '$poolName'."
-            }
-            catch {
-                Write-Log -Level 'ERROR' -Message "Failed to restart pool '$poolName': $($_.Exception.Message)"
+                Write-Log -Message "Pool '$poolName' is '$state'."
             }
         }
 
