@@ -1,0 +1,30 @@
+Phase 1prompts and output
+………………………………….
+Prompt for creating terraform script to deploy vms in azure 
+------
+
+You are a senior cloud infrastructure architect with deep expertise in both Azure. We have a infra code on azure under @file:tflabs . rewrite the another terraform code for new requirement in a new folder capstoneproject . if you have any doubts in the architecture ask me before making any decision
+The new requirement is:
+-	There should be two windows servers.
+-	One is web servers to run web application 
+-	Another server name should be the monitor servers
+-	On web servers 80 and 443 port should be open for all 
+-	RDP session should be allowed using public IP for both the servers 
+-	
+
+
+
+
+Prompt Output for creating terraform script to deploy vms in azure 
+----
+Terraform init
+Terraform plan
+Terraform apply
+
+The terraform scripts has been created to deploy 2 windows virtual machines in azure as follow 
+
+monitor_vm_private_ip = "10.1.2.10"
+monitor_vm_public_ip = "172.191.52.32"
+resource_group = "rg-capstone-sachinb"
+web_vm_private_ip = "10.1.1.10"
+web_vm_public_ip = "172.178.66.6"
