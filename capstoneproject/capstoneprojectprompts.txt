@@ -1,4 +1,4 @@
-Phase 1prompts and output
+Phase 1 prompts and output
 ………………………………….
 Prompt for creating terraform script to deploy vms in azure 
 ------
@@ -28,3 +28,296 @@ monitor_vm_public_ip = "172.191.52.32"
 resource_group = "rg-capstone-sachinb"
 web_vm_private_ip = "10.1.1.10"
 web_vm_public_ip = "172.178.66.6"
+
+
+
+=============================================================================Phase 2 prompts =========================================================
+---
+IIS monitoring script 
+-----
+
+
+You are a senior Windows Server 2022 automation engineer.
+Generate a PowerShell script that:
+  - Checks all IIS application pool states every 20 seconds
+  - irrespective of ststus of service monitor the status in 20 seconds
+  - and keep monitoring the status of the pool 
+  - Logs all actions to C:\Logs\iis-monitor.log with timestamps
+
+The script MUST include:
+  1. -DryRun switch parameter: shows what it would do without restarting
+  2. Rollback function: stops the monitoring loop and restores pool state
+  3. Idempotency: check if pool is already running before attempting restart
+  4. Error handling with try/catch on all IIS operations
+  5. Exit cleanly on Ctrl+C (Register-EngineEvent PowerShell.Exiting)
+
+Environment: Windows Server 2022, IIS installed, WebAdministration module available
+Run as: Administrator
+
+IIS fault-injection
+-------
+You are a senior Windows Server 2022 automation engineer.
+Generate a PowerShell script that:
+  - Stop-WebAppPool -Name DefaultAppPool
+  - Logs all actions to C:\Logs\ iis-stop-defaultapppool.log with timestamps
+Environment: Windows Server 2022, IIS installed, WebAdministration module available
+Run as: Administrator
+
+IIS  restore script
+----
+You are a senior Windows Server 2022 automation engineer.
+Generate a PowerShell script that:
+  - start-WebAppPool -Name DefaultAppPool
+  - Logs all actions to C:\Logs\ iis-start-defaultappoollog with timestamps
+Environment: Windows Server 2022, IIS installed, WebAdministration module available
+Run as: Administrator
+
+
+
+
+===========================================================================Phase 3 Break & Detect===================================================================
+
+
+
+You are a senior infrastructure operations engineer.
+Analyse the following issue and provide:
+1.	Plain-English explanation of what is happening
+2.	Likely root cause (most probable first)
+3.	Immediate investigation steps (in order)
+4.	Safe remediation options (flag any requiring a maintenance window)
+Constraints:
+•	Only recommend changes appropriate for [OS/PLATFORM: e.g. Windows / Azure]
+•	Flag anything that requires a production change window
+•	Do not suggest reboots unless all other options are exhausted
+
+
+Environment:
+web server =  Windows Server 2022(running on azure cloud) , IIS installed,  IP= 172.178.66.6
+client Monitor machine = Windows Server 2022(running on azure cloud) 
+ 
+
+
+
+
+=================User facing below issue while accessing web server =============
+PS C:\Users\labadmin> curl http://172.178.66.6/
+curl : Service Unavailable
+HTTP Error 503. The service is unavailable.
+At line:1 char:1
++ curl http://172.178.66.6/
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (System.Net.HttpWebRequest:HttpWebRequest) [Invoke-WebRequest], WebExc
+   eption
+    + FullyQualifiedErrorId : WebCmdletWebResponseException,Microsoft.PowerShell.Commands.InvokeWebRequestCommand
+PS C:\Users\labadmin> curl http://172.178.66.6/
+curl : Service Unavailable
+HTTP Error 503. The service is unavailable.
+At line:1 char:1
++ curl http://172.178.66.6/
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (System.Net.HttpWebRequest:HttpWebRequest) [Invoke-WebRequest], WebExc
+   eption
+    + FullyQualifiedErrorId : WebCmdletWebResponseException,Microsoft.PowerShell.Commands.InvokeWebRequestCommand
+PS C:\Users\labadmin>
+
+
+
+=====Azure web server inbound rules ============ 
+training [ ~ ]$ az network nsg rule list \
+  --resource-group rg-capstone-sachinb \
+  --nsg-name nsg-web \
+  --output table
+Name        ResourceGroup        Priority    SourcePortRanges    SourceAddressPrefixes    SourceASG    Access    Protocol    Direction    DestinationPortRanges    DestinationAddressPrefixes    DestinationASG
+----------  -------------------  ----------  ------------------  -----------------------  -----------  --------  ----------  -----------  -----------------------  ----------------------------  ----------------
+AllowHTTPS  rg-capstone-sachinb  110         *                   *                        None         Allow     Tcp         Inbound      443                      *                             None
+AllowRDP    rg-capstone-sachinb  120         *                   *                        None         Allow     Tcp         Inbound      3389                     *                             None
+AllowHTTP   rg-capstone-sachinb  100         *                   *                        None         Allow     Tcp         Inbound      80                       *                             None
+training [ ~ ]$ 
+
+
+
+===========iis service Monitoring logs ============
+
+[2026-06-19 10:56:45] [INFO] IIS monitor started. Poll interval: 20 second(s). DryRun: False
+[2026-06-19 10:56:45] [INFO] Baseline captured: pool 'DefaultAppPool' state 'Started'.
+[2026-06-19 10:56:45] [INFO] Pool 'DefaultAppPool' is 'Started'.
+[2026-06-19 10:57:05] [INFO] Pool 'DefaultAppPool' is 'Started'.
+[2026-06-19 10:57:25] [INFO] Pool 'DefaultAppPool' is 'Started'.
+[2026-06-19 10:57:45] [INFO] Pool 'DefaultAppPool' is 'Started'.
+[2026-06-19 10:58:05] [INFO] Pool 'DefaultAppPool' is 'Started'.
+[2026-06-19 10:58:25] [INFO] Pool 'DefaultAppPool' is 'Started'.
+[2026-06-19 10:58:45] [INFO] Pool 'DefaultAppPool' is 'Started'.
+[2026-06-19 10:59:05] [INFO] Pool 'DefaultAppPool' is 'Started'.
+[2026-06-19 10:59:25] [INFO] Pool 'DefaultAppPool' is 'Started'.
+[2026-06-19 10:59:45] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+[2026-06-19 11:00:05] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+[2026-06-19 11:00:25] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+[2026-06-19 11:00:45] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+[2026-06-19 11:01:05] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+[2026-06-19 11:01:25] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+[2026-06-19 11:01:45] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+[2026-06-19 11:02:05] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+[2026-06-19 11:02:25] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+[2026-06-19 11:02:45] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+[2026-06-19 11:03:05] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+[2026-06-19 11:03:25] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+[2026-06-19 11:03:45] [WARN] Pool 'DefaultAppPool' is Stopped. Continuing to monitor status every 20 second(s).
+
+=====recently implemented change logs =================
+
+[2026-06-19 10:59:40] [INFO] WebAdministration module loaded.
+[2026-06-19 10:59:40] [INFO] Current state for 'DefaultAppPool' is 'Started'.
+[2026-06-19 10:59:40] [INFO] Stop-WebAppPool executed for 'DefaultAppPool'.
+[2026-06-19 10:59:40] [INFO] New state for 'DefaultAppPool' is 'Stopping'.
+
+
+
+
+===========================================================================
+
+implemented the AI suggestions-  Phase 4
+
+============================================================================
+
+implemented below command as suggested by AI to start the DefaultAppPool
+
+PS C:\Users\labadmin> start-WebAppPool -Name DefaultAppPool
+PS C:\Users\labadmin>
+
+PS C:\Users\labadmin> Get-WebAppPoolState
+
+Value
+-----
+Started
+
+
+issue has been resolved  
+=====evidence from client machine : =====
+
+PS C:\Users\labadmin> date
+
+Friday, June 19, 2026 11:29:47 AM
+
+
+PS C:\Users\labadmin>
+PS C:\Users\labadmin>
+PS C:\Users\labadmin> Invoke-WebRequest http://172.178.66.6/ -UseBasicParsing
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+                    <html xmlns="http://www.w3.org/1999/xhtml">
+                    <head>
+                    <meta http-equiv="Content-Type" cont...
+RawContent        : HTTP/1.1 200 OK
+                    Accept-Ranges: bytes
+                    Content-Length: 703
+                    Content-Type: text/html
+                    Date: Fri, 19 Jun 2026 11:29:52 GMT
+                    ETag: "f0705916b7ffdc1:0"
+                    Last-Modified: Fri, 19 Jun 2026 06:44:33 GMT
+                    Serve...
+Forms             :
+Headers           : {[Accept-Ranges, bytes], [Content-Length, 703], [Content-Type, text/html], [Date, Fri, 19 Jun 2026
+                    11:29:52 GMT]...}
+Images            : {}
+InputFields       : {}
+Links             : {@{outerHTML=<a href="http://go.microsoft.com/fwlink/?linkid=66138&amp;clcid=0x409"><img
+                    src="iisstart.png" alt="IIS" width="960" height="600" /></a>; tagName=A;
+                    href=http://go.microsoft.com/fwlink/?linkid=66138&amp;clcid=0x409}}
+ParsedHtml        :
+RawContentLength  : 703
+
+
+
+PS C:\Users\labadmin>
+
+
+
+=========================================================================RCA Generation prompt =======================================================
+
+You are a senior infrastructure incident analyst.
+Using the logs provided above, produce:
+1.	Chronological incident timeline (HH:MM format)
+2.	Root cause statement (one sentence)
+3.	5-Why analysis
+4.	Contributing factors
+5.	Preventive actions (ranked by impact)
+Constraints:
+•	Base all findings ONLY on the log evidence provided
+•	If evidence is insufficient for a finding, state: ‘Insufficient evidence’
+•	Do not speculate beyond what the logs show
+
+
+
+====================================AI Output===========================
+
+1. Chronological Incident Timeline
+
+Time		Event
+10:56		IIS monitor started with 20-second polling interval.
+10:56		Baseline captured: DefaultAppPool state was Started.
+10:56-10:59	Monitor repeatedly reported DefaultAppPool as Started.
+10:59		Recently implemented change loaded the WebAdministration module.
+10:59		Change log recorded current state for DefaultAppPool as Started.
+10:59		Stop-WebAppPool executed for DefaultAppPool.
+10:59		Change log recorded new state for DefaultAppPool as Stopping.
+10:59		Monitor reported DefaultAppPool as Stopped.
+11:00-11:03	Monitor continued reporting DefaultAppPool as Stopped every 20 seconds.
+11:29		Operator ran Start-WebAppPool -Name DefaultAppPool.
+11:29		Get-WebAppPoolState returned Started.
+11:29		Client request to http://172.178.66.6/ returned HTTP 200 OK.
+
+
+2. Root Cause Statement
+
+The incident was caused by DefaultAppPool being stopped after Stop-WebAppPool was executed at 10:59, resulting in IIS returning HTTP 503 Service Unavailable until the pool was started again at 11:29.
+
+3. 5-Why Analysis
+
+Why did users receive HTTP 503 Service Unavailable?
+Because IIS could not serve the request while DefaultAppPool was stopped.
+
+Why was DefaultAppPool stopped?
+Because the change log shows Stop-WebAppPool was executed for DefaultAppPool at 10:59.
+
+Why did the stopped app pool remain unavailable?
+Because the monitor logs show it continued detecting DefaultAppPool as Stopped every 20 seconds from 10:59 through 11:03, with no evidence of automatic recovery in the provided logs.
+
+Why was Stop-WebAppPool executed?
+Insufficient evidence.
+
+Why was there no immediate automatic or manual restart after the stop command?
+Insufficient evidence.
+
+4. Contributing Factors
+
+DefaultAppPool was explicitly stopped according to the change log.
+The monitor detected the stopped state but the provided logs show no remediation action.
+The app pool remained stopped for multiple monitoring intervals.
+Client validation showed service recovery only after Start-WebAppPool was run.
+Insufficient evidence to determine who or what initiated the stop command.
+Insufficient evidence to determine whether a maintenance activity, deployment, scheduled task, or manual operation caused the stop.
+5. Preventive Actions, Ranked By Impact
+
+Require post-change validation after any IIS app pool stop/start action
+Evidence basis: service recovered only after Start-WebAppPool and client validation returned HTTP 200 OK.
+
+Add alerting when DefaultAppPool is detected as Stopped
+Evidence basis: monitor repeatedly logged the stopped state every 20 seconds.
+
+Add controlled auto-remediation or documented operator action for stopped app pools
+Evidence basis: monitor detected the stopped state but provided logs show no recovery action.
+
+Ensure any script or procedure that runs Stop-WebAppPool also validates final state as Started
+Evidence basis: change log shows final state after stop was only Stopping, followed by monitor reporting Stopped.
+
+Record operator, script, or change identifier in IIS change logs
+Evidence basis: current logs show Stop-WebAppPool was executed but do not show who or what initiated it.
+
+
+
+
+
